@@ -7,6 +7,32 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY!
 );
 
+/**
+ * Fetch default deposit amount from system settings
+ * Falls back to R$ 1000.00 if not configured
+ */
+async function getDefaultDepositAmount(): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'deposit_amount')
+      .single();
+
+    if (error || !data) {
+      console.warn('Could not fetch deposit_amount from settings, using default');
+      return 1000.00; // Fallback to R$ 1000.00
+    }
+
+    // Value is stored in cents, convert to reais
+    const amountInCents = data.value.amount || 100000;
+    return amountInCents / 100;
+  } catch (err) {
+    console.error('Error fetching default deposit amount:', err);
+    return 1000.00; // Fallback
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -40,8 +66,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const finalStayAmount = stay_amount || booking?.total_price || booking_data?.total_price || 0;
-    const finalDepositAmount = deposit_amount || 1000.00;
-    const totalAmount = finalStayAmount + finalDepositAmount;
+      
+      // If deposit_amount is not provided in the request, fetch from system settings
+      let finalDepositAmount = deposit_amount;
+      if (!finalDepositAmount) {
+        finalDepositAmount = await getDefaultDepositAmount();
+        console.log(`Using deposit amount from settings: R$ ${finalDepositAmount.toFixed(2)}`);
+      }
+      
 
     // Check if checkout session already exists for this booking
     const { data: existingSession } = await supabase
