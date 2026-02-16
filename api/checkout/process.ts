@@ -471,6 +471,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       depositChargeId,
       stayStatus,
       depositStatus,
+      depositAmount,
       // Include PIX QR code data if available
       ...(pixData ? {
         pix: {

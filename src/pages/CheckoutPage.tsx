@@ -16,6 +16,8 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [pixData, setPixData] = useState<any>(null); // Store PIX QR code data
+  const [depositStatus, setDepositStatus] = useState<string | null>(null); // Store deposit authorization status
+  const [depositAmount, setDepositAmount] = useState<number>(0); // Store deposit amount
   const [booking, setBooking] = useState<Booking | null>(null);
   const [sessionValid, setSessionValid] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
@@ -127,6 +129,14 @@ export default function CheckoutPage() {
       const result = await response.json();
       
       if (result.success) {
+        // Store deposit information
+        if (result.depositStatus) {
+          setDepositStatus(result.depositStatus);
+        }
+        if (result.depositAmount) {
+          setDepositAmount(result.depositAmount);
+        }
+        
         // If PIX payment, show QR code
         if (result.pix) {
           setPixData(result.pix);
@@ -187,12 +197,36 @@ export default function CheckoutPage() {
             <div className="text-center mb-8">
               <Logo size="lg" />
             </div>
+            
+            {/* Deposit Authorization Success - Show this BEFORE the PIX QR code */}
+            {depositStatus === 'AUTHORIZED' && depositAmount > 0 && (
+              <div className="bg-green-50 border-2 border-green-500 rounded-lg p-6 mb-6">
+                <div className="flex items-center justify-center mb-3">
+                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-xl font-serif font-bold text-green-800 text-center mb-2">
+                  ✓ Caução Autorizada com Sucesso!
+                </h3>
+                <p className="text-green-700 text-center mb-2">
+                  <strong>R$ {(depositAmount / 100).toFixed(2)}</strong> foram pré-autorizados no seu cartão
+                </p>
+                <p className="text-sm text-green-600 text-center">
+                  Este valor será liberado automaticamente após o checkout, caso não haja danos.
+                </p>
+              </div>
+            )}
+            
+            {/* Now continue with PIX payment */}
             <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
               <h3 className="text-2xl font-serif font-bold mb-4 text-ibira-green text-center">
-                Pagamento PIX
+                {depositStatus === 'AUTHORIZED' ? 'Agora, pague a estadia com PIX' : 'Pagamento PIX'}
               </h3>
               <p className="text-center text-gray-600 mb-6">
-                Escaneie o QR Code abaixo para pagar
+                Escaneie o QR Code abaixo para finalizar sua reserva
               </p>
               
               {/* QR Code Image */}
