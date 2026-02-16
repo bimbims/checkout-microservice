@@ -5,6 +5,7 @@ import './index.css';
 import HomePage from './pages/HomePage';
 import CheckoutPage from './pages/CheckoutPage';
 import AdminPanel from './pages/AdminPanel';
+import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -14,6 +15,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/" element={<HomePage />} />
         <Route path="/checkout/:token" element={<CheckoutPage />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/admin/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>

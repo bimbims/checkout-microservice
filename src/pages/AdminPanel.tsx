@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DepositHold } from '../types';
 import Logo from '../components/Logo';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Lock, Unlock, DollarSign, RefreshCw } from 'lucide-react';
+import { Lock, Unlock, DollarSign, RefreshCw, Settings } from 'lucide-react';
 
 export default function AdminPanel() {
+  const navigate = useNavigate();
   const [deposits, setDeposits] = useState<DepositHold[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -208,13 +210,22 @@ export default function AdminPanel() {
                 </p>
               </div>
             </div>
-            <button
-              onClick={loadDeposits}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Atualizar
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate('/admin/settings')}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                Configurações
+              </button>
+              <button
+                onClick={loadDeposits}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Atualizar
+              </button>
+            </div>
           </div>
 
           {/* Alerts */}
