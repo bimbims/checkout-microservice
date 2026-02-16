@@ -85,8 +85,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         finalDepositAmount = await getDefaultDepositAmount();
         console.log(`Using deposit amount from settings: R$ ${finalDepositAmount.toFixed(2)}`);
       }
-      
-
+            const totalAmount = finalStayAmount + finalDepositAmount;
     // Check if checkout session already exists for this booking
     const { data: existingSession } = await supabase
       .from('checkout_sessions')
