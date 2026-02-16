@@ -68,6 +68,10 @@ async function testPixWithDeposit() {
     console.log(`Stay Status: ${result.stayStatus}`);
     console.log(`Deposit Status: ${result.depositStatus}`);
     
+    if (result.stayAmount) {
+      console.log(`Stay Amount: R$ ${(result.stayAmount / 100).toFixed(2)}`);
+    }
+    
     if (result.depositAmount) {
       console.log(`Deposit Amount: R$ ${(result.depositAmount / 100).toFixed(2)}`);
     }

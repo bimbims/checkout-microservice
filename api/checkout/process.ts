@@ -471,8 +471,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       depositChargeId,
       stayStatus,
       depositStatus,
-      stayAmount: totalAmount,
-      depositAmount,
+      stayAmount: Math.round(totalAmount * 100), // Return in cents for consistency
+      depositAmount: Math.round(depositAmount * 100), // Return in cents for consistency
       // Include PIX QR code data if available
       ...(pixData ? {
         pix: {
