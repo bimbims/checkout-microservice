@@ -25,7 +25,11 @@ async function testPayment() {
         check_in: '2026-03-01',
         check_out: '2026-03-05',
         total_price: 1500,
-        guest_count: 2
+        guest_counts: {
+          adults: 2,
+          children: 0,
+          infants: 0
+        }
       },
       stay_amount: 1500,
       deposit_amount: 1000

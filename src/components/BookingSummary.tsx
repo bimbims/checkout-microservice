@@ -22,10 +22,10 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
       (1000 * 60 * 60 * 24)
   );
 
-  const totalGuests =
-    booking.guest_counts.adults +
-    booking.guest_counts.children +
-    booking.guest_counts.infants;
+  // Support both guest_counts (structured) and guest_count (simple number)
+  const totalGuests = booking.guest_counts
+    ? booking.guest_counts.adults + booking.guest_counts.children + booking.guest_counts.infants
+    : (booking as any).guest_count || 1;
 
   return (
     <div className="bg-white border border-ibira-border p-6 space-y-6 animate-fade-in">
