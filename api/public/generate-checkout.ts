@@ -13,22 +13,34 @@ const supabase = createClient(
  */
 async function getDefaultDepositAmount(): Promise<number> {
   try {
+    console.log('[getDefaultDepositAmount] Fetching from system_settings...');
+    
     const { data, error } = await supabase
       .from('system_settings')
       .select('value')
       .eq('key', 'deposit_amount')
       .single();
 
-    if (error || !data) {
-      console.warn('Could not fetch deposit_amount from settings, using default');
-      return 1000.00; // Fallback to R$ 1000.00
+    if (error) {
+      console.error('[getDefaultDepositAmount] Supabase error:', error);
+      console.warn('[getDefaultDepositAmount] Using fallback: R$ 1000.00');
+      return 1000.00;
+    }
+
+    if (!data) {
+      console.warn('[getDefaultDepositAmount] No data found, using fallback: R$ 1000.00');
+      return 1000.00;
     }
 
     // Value is stored in cents, convert to reais
     const amountInCents = data.value.amount || 100000;
-    return amountInCents / 100;
+    const amountInReais = amountInCents / 100;
+    
+    console.log(`[getDefaultDepositAmount] Loaded from settings: R$ ${amountInReais.toFixed(2)} (${amountInCents} cents)`);
+    return amountInReais;
   } catch (err) {
-    console.error('Error fetching default deposit amount:', err);
+    console.error('[getDefaultDepositAmount] Exception caught:', err);
+    console.warn('[getDefaultDepositAmount] Using fallback: R$ 1000.00');
     return 1000.00; // Fallback
   }
 }

@@ -23,13 +23,21 @@ ON CONFLICT (key) DO NOTHING;
 -- 3. Create index
 CREATE INDEX IF NOT EXISTS idx_settings_key ON system_settings(key);
 
--- 4. Add trigger for updated_at
-DROP TRIGGER IF EXISTS update_system_settings_updated_at ON system_settings;
-CREATE TRIGGER update_system_settings_updated_at BEFORE UPDATE ON system_settings
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- 4. Add trigger for updated_at (only if function exists)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_proc WHERE proname = 'update_updated_at_column'
+  ) THEN
+    DROP TRIGGER IF EXISTS update_system_settings_updated_at ON system_settings;
+    CREATE TRIGGER update_system_settings_updated_at 
+      BEFORE UPDATE ON system_settings
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
--- 5. Enable RLS
-ALTER TABLE system_settings ENABLE ROW LEVEL SECURITY;
+-- 5. Disable RLS for system settings (it's configuration data, service key has access)
+ALTER TABLE system_settings DISABLE ROW LEVEL SECURITY;
 
 -- 6. Verify
 SELECT * FROM system_settings ORDER BY key;
