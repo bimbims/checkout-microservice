@@ -70,7 +70,54 @@ export default function AdminPanel() {
   }
 
   async function handleCapture(depositId: string) {
-    if (!confirm('Deseja capturar esta caução? O valor será cobrado do cartão do cliente.')) {
+    // Find the deposit to show current amount
+    const deposit = deposits.find(d => d.id === depositId);
+    if (!deposit) {
+      setError('Depósito não encontrado');
+      return;
+    }
+
+    const depositAmount = deposit.amount / 100; // Convert cents to BRL
+    
+    // Ask for capture amount
+    const captureAmountInput = prompt(
+      `Digite o valor a ser capturado (R$):\n\n` +
+      `Valor total da caução: R$ ${depositAmount.toFixed(2)}\n\n` +
+      `Exemplos:\n` +
+      `- "${depositAmount}" = captura total\n` +
+      `- "250" = captura parcial de R$ 250,00\n` +
+      `- "0" ou vazio = cancelar`,
+      depositAmount.toString()
+    );
+
+    if (!captureAmountInput || captureAmountInput.trim() === '0') {
+      return; // User cancelled
+    }
+
+    const captureAmount = parseFloat(captureAmountInput.replace(',', '.'));
+
+    // Validate amount
+    if (isNaN(captureAmount) || captureAmount <= 0) {
+      setError('Valor inválido. Digite um número maior que zero.');
+      return;
+    }
+
+    if (captureAmount > depositAmount) {
+      setError(`Valor máximo permitido: R$ ${depositAmount.toFixed(2)}`);
+      return;
+    }
+
+    // Confirm capture
+    const isPartial = captureAmount < depositAmount;
+    const confirmMessage = isPartial
+      ? `Confirma captura PARCIAL?\n\n` +
+        `Valor a cobrar: R$ ${captureAmount.toFixed(2)}\n` +
+        `Valor a liberar: R$ ${(depositAmount - captureAmount).toFixed(2)}\n\n` +
+        `O valor será cobrado do cartão do cliente.`
+      : `Confirma captura TOTAL de R$ ${captureAmount.toFixed(2)}?\n\n` +
+        `O valor será cobrado do cartão do cliente.`;
+
+    if (!confirm(confirmMessage)) {
       return;
     }
 
@@ -82,7 +129,10 @@ export default function AdminPanel() {
       const response = await fetch('/api/admin/deposit/capture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ depositId }),
+        body: JSON.stringify({ 
+          depositId,
+          amount: captureAmount, // Send amount in BRL
+        }),
       });
 
       if (!response.ok) {
@@ -90,7 +140,18 @@ export default function AdminPanel() {
         throw new Error(data.error || 'Erro ao capturar caução');
       }
 
-      setSuccess('Caução capturada com sucesso!');
+      const result = await response.json();
+      
+      if (result.isPartialCapture) {
+        setSuccess(
+          `Captura parcial realizada!\n` +
+          `Capturado: R$ ${result.capturedAmount.toFixed(2)}\n` +
+          `O restante (R$ ${result.remainingAmount.toFixed(2)}) ainda está retido.`
+        );
+      } else {
+        setSuccess('Caução capturada integralmente com sucesso!');
+      }
+      
       await loadDeposits();
     } catch (err) {
       console.error('Error capturing deposit:', err);
@@ -105,6 +166,8 @@ export default function AdminPanel() {
       AUTHORIZED: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Autorizado' },
       CAPTURED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Capturado' },
       RELEASED: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Liberado' },
+      EXPIRED: { bg: 'bg-orange-100', text: 'text-orange-800', label: 'Expirado' },
+      SKIPPED: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Não solicitado' },
       FAILED: { bg: 'bg-red-100', text: 'text-red-800', label: 'Falhou' },
     };
 
@@ -215,8 +278,16 @@ export default function AdminPanel() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-gray-900">
-                          R$ {deposit.amount.toFixed(2)}
+                          R$ {(deposit.amount / 100).toFixed(2)}
                         </div>
+                        {deposit.status === 'CAPTURED' && deposit.captured_amount && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Capturado: R$ {(deposit.captured_amount / 100).toFixed(2)}
+                            {deposit.captured_amount < deposit.amount && (
+                              <span className="text-green-600"> (parcial)</span>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(deposit.status)}

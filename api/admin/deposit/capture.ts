@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { depositId } = req.body;
+    const { depositId, amount: captureAmount } = req.body;
 
     if (!depositId) {
       return res.status(400).json({ error: 'depositId é obrigatório' });
@@ -57,14 +57,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Determine amount to capture (partial or full)
+    const fullDepositAmount = deposit.amount; // Already in cents from database
+    const amountToCapture = captureAmount 
+      ? Math.round(captureAmount * 100) // Convert BRL to cents
+      : fullDepositAmount; // Capture full amount if not specified
+
+    // Validate capture amount
+    if (amountToCapture > fullDepositAmount) {
+      return res.status(400).json({
+        error: 'Valor de captura inválido',
+        details: `Valor máximo permitido: R$ ${(fullDepositAmount / 100).toFixed(2)}`,
+      });
+    }
+
+    if (amountToCapture <= 0) {
+      return res.status(400).json({
+        error: 'Valor de captura inválido',
+        details: 'O valor deve ser maior que zero',
+      });
+    }
+
+    console.log('[CAPTURE] Capturing deposit:', {
+      depositId,
+      fullAmount: fullDepositAmount / 100,
+      captureAmount: amountToCapture / 100,
+      isPartial: amountToCapture < fullDepositAmount,
+    });
+
     // Capture the pre-authorization in PagBank
     let captureResponse;
     try {
       captureResponse = await axios.post(
-        `${PAGBANK_API_URL}/charges/${deposit.charge_id}/capture`,
+        `${PAGBANK_API_URL}/charges/${deposit.pagbank_charge_id}/capture`,
         {
           amount: {
-            value: Math.round(deposit.amount * 100), // Convert to cents
+            value: amountToCapture, // Amount already in cents
           },
         },
         {
@@ -74,8 +102,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           },
         }
       );
+      
+      console.log('[CAPTURE] PagBank capture successful:', {
+        chargeId: deposit.pagbank_charge_id,
+        capturedAmount: amountToCapture / 100,
+      });
     } catch (pagbankError: any) {
-      console.error('PagBank capture error:', pagbankError.response?.data || pagbankError);
+      console.error('[CAPTURE] PagBank capture error:', pagbankError.response?.data || pagbankError);
       return res.status(500).json({
         error: 'Erro ao capturar no PagBank',
         details: pagbankError.response?.data?.message || 'Erro desconhecido',
@@ -88,13 +121,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .update({
         status: 'CAPTURED',
         captured_at: new Date().toISOString(),
+        captured_amount: amountToCapture, // Store in cents
       })
       .eq('id', depositId);
 
     if (updateError) {
-      console.error('Error updating deposit:', updateError);
+      console.error('[CAPTURE] Error updating deposit:', updateError);
       return res.status(500).json({ error: 'Erro ao atualizar depósito' });
     }
+
+    console.log('[CAPTURE] Deposit updated successfully');
 
     // Log action
     await supabase.from('payment_logs').insert({
@@ -102,8 +138,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       action: 'DEPOSIT_CAPTURED',
       details: {
         depositId,
-        chargeId: deposit.charge_id,
-        amount: deposit.amount,
+        chargeId: deposit.pagbank_charge_id,
+        fullDepositAmount: fullDepositAmount / 100,
+        capturedAmount: amountToCapture / 100,
+        isPartialCapture: amountToCapture < fullDepositAmount,
         captureResponse: captureResponse.data,
       },
     });
@@ -120,7 +158,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         guestName: booking.guest_name,
         houseName: deposit.house_name || booking.house_name,
         bookingId: deposit.booking_id,
-        depositAmount: deposit.amount,
+        depositAmount: amountToCapture / 100, // Convert cents to BRL
         damageReason: 'Foram identificados danos à propriedade durante a vistoria pós-checkout.',
       };
 
@@ -136,10 +174,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       success: true,
-      message: 'Caução capturada com sucesso',
+      message: amountToCapture < fullDepositAmount 
+        ? `Captura parcial realizada: R$ ${(amountToCapture / 100).toFixed(2)} de R$ ${(fullDepositAmount / 100).toFixed(2)}`
+        : 'Caução capturada integralmente com sucesso',
       depositId,
       status: 'CAPTURED',
-      amount: deposit.amount,
+      fullAmount: fullDepositAmount / 100,
+      capturedAmount: amountToCapture / 100,
+      remainingAmount: (fullDepositAmount - amountToCapture) / 100,
+      isPartialCapture: amountToCapture < fullDepositAmount,
     });
   } catch (error) {
     console.error('Capture deposit error:', error);
