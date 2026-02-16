@@ -18,6 +18,7 @@ export default function CheckoutPage() {
   const [pixData, setPixData] = useState<any>(null); // Store PIX QR code data
   const [depositStatus, setDepositStatus] = useState<string | null>(null); // Store deposit authorization status
   const [depositAmount, setDepositAmount] = useState<number>(0); // Store deposit amount
+  const [stayAmount, setStayAmount] = useState<number>(0); // Store stay amount
   const [booking, setBooking] = useState<Booking | null>(null);
   const [sessionValid, setSessionValid] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
@@ -136,6 +137,9 @@ export default function CheckoutPage() {
         if (result.depositAmount) {
           setDepositAmount(result.depositAmount);
         }
+        if (result.stayAmount) {
+          setStayAmount(result.stayAmount);
+        }
         
         // If PIX payment, show QR code
         if (result.pix) {
@@ -225,6 +229,15 @@ export default function CheckoutPage() {
               <h3 className="text-2xl font-serif font-bold mb-4 text-ibira-green text-center">
                 {depositStatus === 'AUTHORIZED' ? 'Agora, pague a estadia com PIX' : 'Pagamento PIX'}
               </h3>
+              
+              {/* Stay Amount - Show prominently */}
+              <div className="bg-ibira-green/10 border-2 border-ibira-green rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-600 text-center mb-1">Valor da Estadia</p>
+                <p className="text-3xl font-bold text-ibira-green text-center">
+                  R$ {stayAmount > 0 ? (stayAmount / 100).toFixed(2) : booking?.total_price?.toFixed(2) || '0.00'}
+                </p>
+              </div>
+              
               <p className="text-center text-gray-600 mb-6">
                 Escaneie o QR Code abaixo para finalizar sua reserva
               </p>
