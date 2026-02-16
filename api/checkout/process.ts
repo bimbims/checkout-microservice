@@ -398,11 +398,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('[PROCESS] Stay transaction saved');
 
-    const { data: depositHold } = await supabase
+    // Save deposit hold
+    console.log('[PROCESS] Saving deposit hold:', {
+      booking_id: bookingId,
+      pagbank_charge_id: depositChargeId,
+      amount: depositAmount,
+      status: depositStatus,
+      house_name: booking.house_name,
+    });
+    
+    const { data: depositHold, error: depositError } = await supabase
       .from('deposit_holds')
       .insert({
         booking_id: bookingId,
-        charge_id: depositChargeId,
+        pagbank_charge_id: depositChargeId,
         amount: depositAmount,
         status: depositStatus,
         house_name: booking.house_name,
@@ -410,7 +419,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .select()
       .single();
 
-    console.log('[PROCESS] Deposit hold saved');
+    if (depositError) {
+      console.error('[PROCESS] Error saving deposit hold:', depositError);
+      console.error('[PROCESS] Deposit hold data:', JSON.stringify({
+        booking_id: bookingId,
+        pagbank_charge_id: depositChargeId,
+        amount: depositAmount,
+        status: depositStatus,
+        house_name: booking.house_name,
+      }));
+    } else {
+      console.log('[PROCESS] Deposit hold saved successfully:', depositHold);
+    }
 
     // Update checkout session
     await supabase
