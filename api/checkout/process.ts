@@ -221,7 +221,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log('[PROCESS] PIX order created:', stayChargeId);
         console.log('[PROCESS] PIX QR Code data:', JSON.stringify(pixData));
         console.log('[PROCESS] PIX QR Code text length:', pixData?.text?.length);
-        console.log('[PROCESS] PIX QR Code links:', pixData?.links?.map(l => l.rel));
+        console.log('[PROCESS] PIX QR Code links:', pixData?.links?.map((l: any) => l.rel));
       } else if (paymentData.stayMethod === 'CREDIT_CARD') {
         console.log('[PROCESS] Processing credit card payment with email:', stayEmail);
         
@@ -383,7 +383,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('[PROCESS] Saving transactions to database');
 
     // Save transactions
-    const { data: stayTransaction } = await supabase
+    await supabase
       .from('transactions')
       .insert({
         booking_id: bookingId,
