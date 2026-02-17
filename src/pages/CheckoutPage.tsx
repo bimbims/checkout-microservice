@@ -66,6 +66,10 @@ export default function CheckoutPage() {
         setBooking(bookingData);
         setSessionValid(true);
 
+        // Set amounts from session
+        setStayAmount(sessionData.stay_amount || bookingData.total_price || 0);
+        setDepositAmount(sessionData.deposit_amount || 1000);
+
         // Calculate time remaining
         const expiresAt = new Date(sessionData.expires_at);
         updateTimeRemaining(expiresAt);
@@ -398,17 +402,17 @@ export default function CheckoutPage() {
             <div>
               <BookingSummary
                 booking={booking}
-                stayAmount={booking.total_price}
-                depositAmount={1000}
-                totalAmount={booking.total_price + 1000}
+                stayAmount={stayAmount || booking.total_price}
+                depositAmount={depositAmount}
+                totalAmount={(stayAmount || booking.total_price) + depositAmount}
               />
             </div>
 
             {/* Right Column - Payment Form */}
             <div>
               <PaymentForm
-                stayAmount={booking.total_price}
-                depositAmount={1000}
+                stayAmount={stayAmount || booking.total_price}
+                depositAmount={depositAmount}
                 onSubmit={handlePaymentSubmit}
                 isProcessing={false}
               />
