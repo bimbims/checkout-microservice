@@ -70,7 +70,12 @@ export default function CheckoutPage() {
 
         // Set amounts from session (deposit_amount is stored in CENTS, convert to REAIS for display)
         setStayAmount(sessionData.stay_amount || bookingData.total_price || 0);
-        setDepositAmount((sessionData.deposit_amount || 100000) / 100);
+        
+        // Deposit MUST come from session (no fallback)
+        if (!sessionData.deposit_amount) {
+          throw new Error('Valor de caução não configurado na sessão');
+        }
+        setDepositAmount(sessionData.deposit_amount / 100);
 
         // Calculate time remaining
         const expiresAt = new Date(sessionData.expires_at);
