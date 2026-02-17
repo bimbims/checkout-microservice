@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Logo from '../components/Logo';
+import LoadingSpinner from '../components/LoadingSpinner';
+import Alert from '../components/Alert';
+import { ArrowLeft, Save, DollarSign } from 'lucide-react';
 
 interface SystemSetting {
   key: string;
@@ -123,139 +127,148 @@ export const SettingsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center">
-            <p className="text-gray-600">Carregando configurações...</p>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-ibira-beige to-white flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-ibira-green font-serif text-lg">Carregando configurações...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-ibira-beige to-white p-6">
+      <div className="max-w-4xl mx-auto py-12">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-12">
           <button
             onClick={() => navigate('/admin')}
-            className="text-blue-600 hover:text-blue-800 mb-4 flex items-center gap-2"
+            className="flex items-center gap-2 text-ibira-green hover:text-ibira-green-dark mb-6 transition-colors"
           >
-            ← Voltar para o Painel
+            <ArrowLeft className="w-4 h-4" />
+            Voltar para Cauções
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">Configurações do Sistema</h1>
-          <p className="text-gray-600 mt-2">Gerencie as configurações globais do sistema de reservas</p>
-        </div>
 
-        {/* Alerts */}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
-            {success}
-          </div>
-        )}
-
-        {/* Deposit Amount Setting */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Valor do Depósito de Caução</h2>
-          <p className="text-gray-600 mb-6">
-            Este valor será usado em todo o sistema: emails, página de checkout, processamento de pagamentos e painel administrativo.
-          </p>
-
-          <div className="space-y-4">
+          <div className="flex items-center gap-4 mb-6">
+            <Logo size="md" />
             <div>
-              <label htmlFor="depositAmount" className="block text-sm font-medium text-gray-700 mb-2">
-                Valor do Depósito (R$)
-              </label>
-              <div className="flex gap-4 items-start">
-                <input
-                  type="number"
-                  id="depositAmount"
-                  step="0.01"
-                  min="50"
-                  max="50000"
-                  value={depositAmountReais}
-                  onChange={(e) => setDepositAmountReais(e.target.value)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="1000.00"
-                />
-                <button
-                  onClick={handleSaveDepositAmount}
-                  disabled={saving}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
-                >
-                  {saving ? 'Salvando...' : 'Salvar'}
-                </button>
-              </div>
-              <p className="text-sm text-gray-500 mt-2">
-                Valor mínimo: R$ 50,00 | Valor máximo: R$ 50.000,00
+              <h1 className="text-4xl font-serif font-bold text-ibira-green">
+                Configurações do Sistema
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Configure valores e parâmetros globais
               </p>
             </div>
+          </div>
 
-            {/* Preview */}
-            {depositAmountReais && !isNaN(parseFloat(depositAmountReais)) && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm font-medium text-blue-900 mb-1">Preview</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {formatCurrency(Math.round(parseFloat(depositAmountReais) * 100))}
-                </p>
-                <p className="text-sm text-blue-700 mt-1">
-                  Este valor será exibido para os clientes
-                </p>
+          {/* Alerts */}
+          {error && (
+            <Alert type="error" onClose={() => setError(null)} className="mb-4">
+              {error}
+            </Alert>
+          )}
+          {success && (
+            <Alert type="success" onClose={() => setSuccess(null)} className="mb-4">
+              {success}
+            </Alert>
+          )}
+        </div>
+
+        {/* Deposit Amount Setting */}
+        <div className="bg-white rounded-lg shadow-md p-8 mb-6">
+          <div className="flex items-start gap-4">
+            <div className="bg-green-100 p-3 rounded-lg">
+              <DollarSign className="w-6 h-6 text-green-700" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-serif font-bold text-gray-900 mb-2">
+                Valor da Caução
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Defina o valor padrão da pré-autorização de caução. Este valor será usado em 
+                todas as novas reservas, aparecerá nos emails e na página de checkout.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="depositAmount" className="block text-sm font-medium text-gray-700 mb-2">
+                    Valor (R$)
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative flex-1 max-w-xs">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                        R$
+                      </span>
+                      <input
+                        type="number"
+                        id="depositAmount"
+                        step="0.01"
+                        min="50"
+                        max="50000"
+                        value={depositAmountReais}
+                        onChange={(e) => setDepositAmountReais(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ibira-green focus:border-transparent text-lg font-semibold"
+                        placeholder="1000.00"
+                      />
+                    </div>
+                    <button
+                      onClick={handleSaveDepositAmount}
+                      disabled={saving}
+                      className="flex items-center gap-2 px-6 py-3 bg-ibira-green text-white rounded-lg hover:bg-ibira-green-dark transition-colors disabled:opacity-50 font-semibold"
+                    >
+                      <Save className="w-4 h-4" />
+                      {saving ? 'Salvando...' : 'Salvar'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Mínimo: R$ 50,00 | Máximo: R$ 50.000,00
+                  </p>
+                </div>
+
+                {/* Current Settings Display */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                  <h3 className="text-sm font-semibold text-blue-900 mb-3">
+                    Configuração Atual
+                  </h3>
+                  {settings
+                    .filter(s => s.key === 'deposit_amount')
+                    .map(setting => (
+                      <div key={setting.key} className="space-y-1 text-sm">
+                        <p className="text-blue-800">
+                          <strong>Valor:</strong> {formatCurrency(setting.value.amount || 0)}
+                        </p>
+                        <p className="text-blue-700">
+                          <strong>Última atualização:</strong>{' '}
+                          {new Date(setting.updated_at).toLocaleString('pt-BR')}
+                          {setting.updated_by && ` por ${setting.updated_by}`}
+                        </p>
+                      </div>
+                    ))}
+                </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* All Settings Table */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Todas as Configurações</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Chave</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Atualizado</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {settings.map((setting) => (
-                  <tr key={setting.key}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {setting.key}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {setting.key === 'deposit_amount' ? (
-                        <span className="font-semibold text-blue-600">
-                          {setting.value.display || formatCurrency(setting.value.amount || 0)}
-                        </span>
-                      ) : (
-                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                          {JSON.stringify(setting.value)}
-                        </code>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {setting.description || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(setting.updated_at).toLocaleString('pt-BR')}
-                      {setting.updated_by && (
-                        <div className="text-xs text-gray-400">por {setting.updated_by}</div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Info Box */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+          <h3 className="text-lg font-serif font-bold text-yellow-900 mb-3">
+            ⚠️ Importante
+          </h3>
+          <div className="text-sm text-yellow-800 space-y-2">
+            <p>
+              <strong>Este valor será usado automaticamente em:</strong>
+            </p>
+            <ul className="list-disc list-inside space-y-1 ml-4">
+              <li>Emails de confirmação enviados aos clientes</li>
+              <li>Página de checkout (valor exibido antes do pagamento)</li>
+              <li>Processamento de pagamento (pré-autorização no cartão)</li>
+              <li>Links de checkout gerados pelo sistema</li>
+            </ul>
+            <p className="mt-4">
+              <strong>Nota:</strong> Esta alteração afeta apenas novas reservas. Reservas existentes 
+              mantém o valor que foi definido no momento da criação.
+            </p>
           </div>
         </div>
       </div>
