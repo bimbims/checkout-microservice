@@ -12,6 +12,8 @@ const supabase = createClient(
  * without needing authentication
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  console.log('[PUBLIC SETTINGS] Request received:', req.method, req.url);
+  
   // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
