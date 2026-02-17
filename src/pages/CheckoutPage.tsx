@@ -15,6 +15,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [processing, setProcessing] = useState(false); // New processing state
   const [pixData, setPixData] = useState<any>(null); // Store PIX QR code data
   const [depositStatus, setDepositStatus] = useState<string | null>(null); // Store deposit authorization status
   const [depositAmount, setDepositAmount] = useState<number>(0); // Store deposit amount
@@ -110,8 +111,10 @@ export default function CheckoutPage() {
   async function handlePaymentSubmit(paymentData: PaymentData) {
     if (!token || !booking) return;
 
+    setProcessing(true); // Start processing
+    setError(null);
+    
     try {
-      setError(null);
 
       const response = await fetch(`/api/checkout/process`, {
         method: 'POST',
@@ -159,6 +162,8 @@ export default function CheckoutPage() {
       console.error('Payment error:', err);
       setError(err instanceof Error ? err.message : 'Erro ao processar pagamento');
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      setProcessing(false); // End processing
     }
   }
 
@@ -414,7 +419,7 @@ export default function CheckoutPage() {
                 stayAmount={stayAmount || booking.total_price}
                 depositAmount={depositAmount}
                 onSubmit={handlePaymentSubmit}
-                isProcessing={false}
+                isProcessing={processing}
               />
             </div>
           </div>
@@ -433,6 +438,32 @@ export default function CheckoutPage() {
           </p>
         </div>
       </div>
+      
+      {/* Processing Overlay */}
+      {processing && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl p-12 max-w-md mx-4 text-center">
+            <div className="mb-6">
+              <LoadingSpinner size="lg" />
+            </div>
+            <h3 className="text-2xl font-serif font-bold text-ibira-green mb-3">
+              Processando Pagamento
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Estamos validando seus dados e processando a transação de forma segura com o PagBank.
+            </p>
+            <p className="text-sm text-gray-500">
+              Por favor, não atualize ou feche esta página.
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-400">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              </svg>
+              Conexão segura
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
