@@ -67,9 +67,9 @@ export default function CheckoutPage() {
         setBooking(bookingData);
         setSessionValid(true);
 
-        // Set amounts from session
+        // Set amounts from session (deposit_amount is stored in CENTS, convert to REAIS for display)
         setStayAmount(sessionData.stay_amount || bookingData.total_price || 0);
-        setDepositAmount(sessionData.deposit_amount || 1000);
+        setDepositAmount((sessionData.deposit_amount || 100000) / 100);
 
         // Calculate time remaining
         const expiresAt = new Date(sessionData.expires_at);
@@ -94,7 +94,7 @@ export default function CheckoutPage() {
   }, [token, navigate]);
 
   function updateTimeRemaining(expiresAt: Date) {
-    const now = new Date();
+    const now = getBrazilianDate();
     const diff = expiresAt.getTime() - now.getTime();
 
     if (diff <= 0) {

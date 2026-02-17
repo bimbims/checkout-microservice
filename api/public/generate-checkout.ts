@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import { addHoursFromNow } from '../../utils/timezone';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -152,9 +153,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const token = `CHK-${hash}`.toUpperCase();
 
-    // Set expiration to 12 hours from now
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 12);
+    // Set expiration to 12 hours from now (Brazilian timezone)
+    const expiresAt = addHoursFromNow(12);
 
     // Create checkout session
     const { data: session, error } = await supabase

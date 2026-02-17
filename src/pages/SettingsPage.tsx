@@ -4,6 +4,7 @@ import Logo from '../components/Logo';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
 import { ArrowLeft, Save, DollarSign } from 'lucide-react';
+import { formatBrazilianDateTime } from '../utils/timezone';
 
 interface SystemSetting {
   key: string;
@@ -239,7 +240,7 @@ export const SettingsPage: React.FC = () => {
                         </p>
                         <p className="text-blue-700">
                           <strong>Última atualização:</strong>{' '}
-                          {new Date(setting.updated_at).toLocaleString('pt-BR')}
+                          {formatBrazilianDateTime(setting.updated_at)} (Horário de Brasília)
                           {setting.updated_by && ` por ${setting.updated_by}`}
                         </p>
                       </div>
