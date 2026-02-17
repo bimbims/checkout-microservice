@@ -102,7 +102,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // PUT - Update setting
   if (req.method === 'PUT') {
     try {
-      const { key, value, updated_by } = req.body;
+      const { key, value, updated_by, description } = req.body;
 
       if (!key || !value) {
         return res.status(400).json({ error: 'key and value are required' });
@@ -118,13 +118,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
+      // Build update object
+      const updateData: any = {
+        value: value,
+        updated_by: updated_by || 'admin',
+        updated_at: new Date().toISOString(),
+      };
+
+      // Include description if provided
+      if (description !== undefined) {
+        updateData.description = description;
+      }
+
       const { data, error } = await supabase
         .from('system_settings')
-        .update({
-          value: value,
-          updated_by: updated_by || 'admin',
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('key', key)
         .select()
         .single();
