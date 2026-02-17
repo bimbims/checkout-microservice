@@ -1,6 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { getBrazilianISOString } from '../../utils/timezone';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Initialize Supabase client inside handler to ensure env vars are available
@@ -136,7 +135,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const updateData: any = {
         value: value,
         updated_by: updated_by || 'admin',
-        updated_at: getBrazilianISOString(),
+        updated_at: new Date().toISOString(),
       };
 
       // Include description if provided
