@@ -7,6 +7,7 @@ import PaymentForm from '../components/PaymentForm';
 import Alert from '../components/Alert';
 import Logo from '../components/Logo';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { getBrazilianDate } from '../utils/timezone';
 
 export default function CheckoutPage() {
   const { token } = useParams<{ token: string }>();
