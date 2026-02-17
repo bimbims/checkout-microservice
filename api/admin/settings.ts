@@ -34,17 +34,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .single();
 
         if (error || !data) {
-          console.warn('[AdminSettings] Deposit not found, using fallback');
-          return res.status(200).json({
-            success: true,
-            depositAmount: 1000,
-            depositAmountCents: 100000,
-            depositAmountDisplay: 'R$ 1.000,00',
-            source: 'fallback',
+          console.error('[AdminSettings] deposit_amount not found in database');
+          return res.status(500).json({
+            success: false,
+            error: 'deposit_amount not configured in database',
+            message: 'Please configure deposit_amount in system_settings table',
           });
         }
 
-        const amountInCents = data.value?.amount || 100000;
+        const amountInCents = data.value?.amount;
+        if (!amountInCents) {
+          return res.status(500).json({
+            success: false,
+            error: 'Invalid deposit_amount configuration',
+          });
+        }
+        
         const amountInReais = amountInCents / 100;
         const display = data.value?.display || `R$ ${amountInReais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
