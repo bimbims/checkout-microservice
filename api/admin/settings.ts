@@ -2,12 +2,20 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { getBrazilianISOString } from '../../utils/timezone';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Initialize Supabase client inside handler to ensure env vars are available
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({
+      success: false,
+      error: 'Supabase configuration missing',
+    });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
   // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -151,7 +159,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Log the change
       await supabase.from('payment_logs').insert({
         booking_id: 'SYSTEM',
-        action: 'SETTING_UPDATED',
+        event_type: 'SETTING_UPDATED',
         details: {
           key,
           oldValue: null, // Could fetch old value if needed
