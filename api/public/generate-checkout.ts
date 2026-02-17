@@ -1,18 +1,12 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
-import { addHoursFromNow } from '../../utils/timezone';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
 
 /**
  * Fetch default deposit amount from system settings
  * CRITICAL: Must be configured in database - no fallback
  */
-async function getDefaultDepositAmount(): Promise<number> {
+async function getDefaultDepositAmount(supabase: any): Promise<number> {
   try {
     console.log('[getDefaultDepositAmount] Fetching from system_settings...');
     
@@ -45,7 +39,7 @@ async function getDefaultDepositAmount(): Promise<number> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS headers
+  // CORS headers - set IMMEDIATELY before any other logic
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -55,11 +49,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
+  // Initialize Supabase client inside handler
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({
+      error: 'Supabase configuration missing',
+    });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
   // GET - Return system settings (deposit amount)
   if (req.method === 'GET') {
     console.log('[generate-checkout] GET request for settings');
     try {
-      const depositAmountReais = await getDefaultDepositAmount();
+      const depositAmountReais = await getDefaultDepositAmount(supabase);
       const depositAmountCents = Math.round(depositAmountReais * 100);
       
       return res.status(200).json({
@@ -103,7 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // If deposit_amount is not provided in the request, fetch from system settings
       let finalDepositAmountReais = deposit_amount;
       if (!finalDepositAmountReais) {
-        finalDepositAmountReais = await getDefaultDepositAmount();
+        finalDepositAmountReais = await getDefaultDepositAmount(supabase);
         console.log(`[generate-checkout] Using deposit amount from settings: R$ ${finalDepositAmountReais.toFixed(2)}`);
       } else {
         // Validate deposit_amount: should be in reais (e.g., 800 not 80000)
@@ -151,8 +157,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const token = `CHK-${hash}`.toUpperCase();
 
-    // Set expiration to 12 hours from now (Brazilian timezone)
-    const expiresAt = addHoursFromNow(12);
+    // Set expiration to 12 hours from now
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 12);
 
     // Create checkout session
     const { data: session, error } = await supabase
