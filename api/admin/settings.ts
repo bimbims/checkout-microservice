@@ -20,10 +20,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // GET - Retrieve all settings or specific setting
   if (req.method === 'GET') {
     try {
-      const { key, public: isPublic } = req.query;
+      const { key } = req.query;
+      const isPublic = req.query.public as string;
 
       // Public mode - simplified response for deposit_amount
       if (isPublic === 'true') {
+        console.log('[AdminSettings] Public mode requested');
         const { data, error } = await supabase
           .from('system_settings')
           .select('value')
@@ -45,6 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const amountInReais = amountInCents / 100;
         const display = data.value?.display || `R$ ${amountInReais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+        console.log('[AdminSettings] Returning public deposit info:', amountInReais);
         return res.status(200).json({
           success: true,
           depositAmount: amountInReais,
