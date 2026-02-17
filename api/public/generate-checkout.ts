@@ -58,6 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // GET - Return system settings (deposit amount)
   if (req.method === 'GET') {
+    console.log('[generate-checkout] GET request for settings');
     try {
       const depositAmountReais = await getDefaultDepositAmount();
       const depositAmountCents = Math.round(depositAmountReais * 100);
