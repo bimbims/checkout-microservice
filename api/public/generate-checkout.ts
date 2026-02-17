@@ -49,11 +49,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // GET - Return system settings (deposit amount)
+  if (req.method === 'GET') {
+    try {
+      const depositAmountReais = await getDefaultDepositAmount();
+      const depositAmountCents = Math.round(depositAmountReais * 100);
+      
+      return res.status(200).json({
+        success: true,
+        depositAmount: depositAmountReais,
+        depositAmountCents: depositAmountCents,
+        depositAmountDisplay: `R$ ${depositAmountReais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      });
+    } catch (error) {
+      console.error('[generate-checkout] Error fetching settings:', error);
+      return res.status(500).json({
+        error: 'Failed to fetch settings',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   }
 
   if (req.method !== 'POST') {
