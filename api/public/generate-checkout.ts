@@ -105,11 +105,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let finalDepositAmountReais = deposit_amount;
       if (!finalDepositAmountReais) {
         finalDepositAmountReais = await getDefaultDepositAmount();
-        console.log(`Using deposit amount from settings: R$ ${finalDepositAmountReais.toFixed(2)}`);
+        console.log(`[generate-checkout] Using deposit amount from settings: R$ ${finalDepositAmountReais.toFixed(2)}`);
+      } else {
+        // Validate deposit_amount: should be in reais (e.g., 800 not 80000)
+        // If value seems too large, assume it's in cents and convert to reais
+        if (finalDepositAmountReais > 10000) {
+          console.warn(`[generate-checkout] deposit_amount looks like cents (${finalDepositAmountReais}), converting to reais`);
+          finalDepositAmountReais = finalDepositAmountReais / 100;
+        }
+        console.log(`[generate-checkout] Using deposit amount from request: R$ ${finalDepositAmountReais.toFixed(2)}`);
       }
       
       // Convert to cents for storage (database stores in cents)
       const finalDepositAmount = Math.round(finalDepositAmountReais * 100);
+      console.log(`[generate-checkout] Final deposit amount to save: ${finalDepositAmount} cents (R$ ${(finalDepositAmount/100).toFixed(2)})`);
       const totalAmount = finalStayAmount + finalDepositAmount;
     // Check if checkout session already exists for this booking
     const { data: existingSession } = await supabase
