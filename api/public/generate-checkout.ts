@@ -102,12 +102,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const finalStayAmount = stay_amount || booking?.total_price || booking_data?.total_price || 0;
       
       // If deposit_amount is not provided in the request, fetch from system settings
-      let finalDepositAmount = deposit_amount;
-      if (!finalDepositAmount) {
-        finalDepositAmount = await getDefaultDepositAmount();
-        console.log(`Using deposit amount from settings: R$ ${finalDepositAmount.toFixed(2)}`);
+      let finalDepositAmountReais = deposit_amount;
+      if (!finalDepositAmountReais) {
+        finalDepositAmountReais = await getDefaultDepositAmount();
+        console.log(`Using deposit amount from settings: R$ ${finalDepositAmountReais.toFixed(2)}`);
       }
-            const totalAmount = finalStayAmount + finalDepositAmount;
+      
+      // Convert to cents for storage (database stores in cents)
+      const finalDepositAmount = Math.round(finalDepositAmountReais * 100);
+      const totalAmount = finalStayAmount + finalDepositAmount;
     // Check if checkout session already exists for this booking
     const { data: existingSession } = await supabase
       .from('checkout_sessions')
@@ -180,7 +183,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       checkoutUrl: `${baseUrl}/checkout/${session.token}`,
       expiresAt: session.expires_at,
       stayAmount: finalStayAmount,
-      depositAmount: finalDepositAmount,
+      depositAmount: finalDepositAmount, // In cents
       totalAmount: totalAmount,
     });
   } catch (error) {

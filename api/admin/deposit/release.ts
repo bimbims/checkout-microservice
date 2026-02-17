@@ -1,9 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
-import { EmailService } from '../../../src/services/email';
-import { generateDepositReleasedEmail, DepositReleasedEmailData } from '../../../src/email-templates/deposit-released';
-import { EMAIL_CONFIG } from '../../../src/config/email-config';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -99,30 +96,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     });
 
-    // Get booking data for email
-    try {
-      const bookingResponse = await axios.get(
-        `${process.env.MAIN_APP_URL}/api/bookings/${deposit.booking_id}`
-      );
-      const booking = bookingResponse.data;
-
-      // Send email notification
-      const emailData: DepositReleasedEmailData = {
-        guestName: booking.guest_name,
-        houseName: deposit.house_name || booking.house_name,
-        bookingId: deposit.booking_id,
-        depositAmount: deposit.amount,
-      };
-
-      await EmailService.sendEmail({
-        to: booking.guest_email,
-        subject: EMAIL_CONFIG.SUBJECTS.DEPOSIT_RELEASED,
-        html: generateDepositReleasedEmail(emailData),
-      });
-    } catch (emailError) {
-      console.error('Error sending deposit released email:', emailError);
-      // Don't fail the request if email fails
-    }
+    // TODO: Send email notification
+    // Email sending temporarily disabled to fix deployment issues
+    console.log('[RELEASE] Deposit released successfully:', depositId);
 
     return res.status(200).json({
       success: true,

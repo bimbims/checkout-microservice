@@ -1,9 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
-import { EmailService } from '../../../src/services/email';
-import { generateDepositCapturedEmail, DepositCapturedEmailData } from '../../../src/email-templates/deposit-captured';
-import { EMAIL_CONFIG } from '../../../src/config/email-config';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -146,31 +143,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     });
 
-    // Get booking data for email
-    try {
-      const bookingResponse = await axios.get(
-        `${process.env.MAIN_APP_URL}/api/bookings/${deposit.booking_id}`
-      );
-      const booking = bookingResponse.data;
-
-      // Send email notification
-      const emailData: DepositCapturedEmailData = {
-        guestName: booking.guest_name,
-        houseName: deposit.house_name || booking.house_name,
-        bookingId: deposit.booking_id,
-        depositAmount: amountToCapture / 100, // Convert cents to BRL
-        damageReason: 'Foram identificados danos à propriedade durante a vistoria pós-checkout.',
-      };
-
-      await EmailService.sendEmail({
-        to: booking.guest_email,
-        subject: EMAIL_CONFIG.SUBJECTS.DEPOSIT_CAPTURED,
-        html: generateDepositCapturedEmail(emailData),
-      });
-    } catch (emailError) {
-      console.error('Error sending deposit captured email:', emailError);
-      // Don't fail the request if email fails
-    }
+    // TODO: Send email notification
+    // Email sending temporarily disabled to fix deployment issues
+    console.log('[CAPTURE] Deposit captured successfully:', depositId, 'Amount:', amountToCapture / 100);
 
     return res.status(200).json({
       success: true,
